@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Interim Report — The Document Intelligence Refinery</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --soft: #f8fafc;
+      --accent: #1f6feb;
+      --accent2: #0f766e;
+      --warn: #b45309;
+    }
+    @page { size: A4; margin: 18mm; }
+    html, body { color: var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    body { line-height: 1.5; }
+    h1 { font-size: 26px; margin: 0.4rem 0 0.4rem; }
+    h2 { font-size: 18px; margin-top: 1.4rem; padding-top: 0.4rem; border-top: 2px solid var(--line); }
+    h3 { font-size: 14px; color: var(--accent2); margin-top: 1rem; }
+    .muted { color: var(--muted); }
+    .pill { display:inline-block; padding:2px 10px; border:1px solid var(--line); border-radius:999px; font-size:12px; color: var(--muted); background: white; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px; background: white; }
+    .callout { border-left: 4px solid var(--accent); background: var(--soft); padding: 10px 12px; border-radius: 10px; }
+    .warn { border-left-color: var(--warn); }
+    code { background: #f1f5f9; padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; vertical-align: top; }
+    th { text-align: left; color: var(--muted); font-weight: 650; }
+    .svg-wrap { border:1px solid var(--line); border-radius: 14px; padding: 10px; background: white; }
+    .page-break { break-before: page; page-break-before: always; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; }
+    .small { font-size: 11px; }
+  </style>
+</head>
+<body>
+
+<section>
+  <div class="pill">B1W3 Interim Report (Single PDF)</div>
+  <h1>The Document Intelligence Refinery — Interim Report</h1>
+  <div class="muted">Author: <b>Kirubel Tewodros</b> · Date: 2026-03-05 · Repo: <span class="mono">https://github.com/78gk/The-Document-Intelligence-Refinery</span></div>
+
+  <div class="grid" style="margin-top:12px">
+    <div class="card">
+      <h3>Executive Summary</h3>
+      <ul>
+        <li>5-stage pipeline: <b>Triage → Extraction Router → Chunking → PageIndex → Query</b>.</li>
+        <li>Three extraction strategies (A/B/C) with a shared interface and normalized <code>ExtractedDocument</code> output.</li>
+        <li>Confidence-gated escalation (A→B, B→C) and an audit ledger capturing routing decisions, confidence, and estimated cost.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Corpus Evidence Used</h3>
+      <p class="small muted">This report references the committed interim artifacts:</p>
+      <ul class="small">
+        <li><code>.refinery/profiles/*.json</code> — triage signals + classification</li>
+        <li><code>.refinery/pageindex/*.json</code> — navigational structure</li>
+        <li><code>.refinery/extraction_ledger.json</code> — strategy used, confidence, time, and cost</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="domain" class="page-break">
+  <h2>1) Domain Notes — Failure Modes & Extraction Strategy Decision Tree</h2>
+
+  <div class="callout">
+    <b>What this section proves:</b> (1) empirical failure modes across four classes (A/B/C/D), (2) an explicit decision tree grounded in measurable signals, and (3) a pipeline diagram showing where quality checks occur.
+  </div>
+
+  <h3>1.1 Digital vs. Scanned: observable criteria (from our corpus)</h3>
+  <div class="grid">
+    <div class="card">
+      <b>Native digital indicators</b>
+      <ul class="small">
+        <li>Non-zero <code>avg_char_density</code> and high <code>font_coverage</code> (≈1.0).</li>
+        <li>Text stream extractable: pages produce non-empty text without OCR.</li>
+        <li>Often lower image dominance (<code>avg_image_density</code> is moderate/low).</li>
+      </ul>
+      <div class="callout small">
+        Example: <code>tax_expenditure_ethiopia_2021_22</code> is <b>native_digital</b> with strong char density + font coverage.
+      </div>
+    </div>
+    <div class="card">
+      <b>Scanned indicators</b>
+      <ul class="small">
+        <li>Near-zero <code>avg_char_density</code> and low/zero <code>font_coverage</code>.</li>
+        <li>High <code>avg_image_density</code> (often near 1.0): pages are raster images.</li>
+        <li>Text extraction yields empty strings; OCR/VLM required.</li>
+      </ul>
+      <div class="callout warn small">
+        Example: <code>2013-E.C-Procurement-information</code> is <b>scanned_image</b> with <code>avg_char_density≈0</code>, <code>avg_image_density≈1</code>.
+      </div>
+    </div>
+  </div>
+
+  <h3>1.2 Failure modes by document class (A/B/C/D) — empirical + technical causes</h3>
+
+  <div class="card">
+    <b>Class A — Native financial</b> <span class="pill">Examples: Annual_Report_JUNE-2023, tax_expenditure_ethiopia_2021_22</span>
+    <ul class="small">
+      <li><b>Multi-column reading-order collapse:</b> annual reports often use two columns. Naive extraction can interleave columns, breaking sentence continuity and LDU boundaries. Root cause: insufficient layout modeling.</li>
+      <li><b>Table semantics loss:</b> financial statements embed structured tables; text-only extraction removes cell boundaries (headers/rows). Root cause: plain text output lacks table normalization.</li>
+    </ul>
+    <div class="callout small"><b>Mitigation:</b> Route <i>native_digital + multi_column</i> to Strategy B. Escalate A→B if Strategy A confidence <code>0.8</code>.</div>
+    <div class="callout small" style="margin-top:8px"><b>Measured signals:</b><ul class='small'><li><code>Annual_Report_JUNE-2023</code> — native_digital / multi_column — <span class='mono'>char_density=0.005930, image_density=0.482, table_density=0.213, font_coverage=1.00</span></li><li><code>tax_expenditure_ethiopia_2021_22</code> — native_digital / single_column — <span class='mono'>char_density=0.003785, image_density=0.022, table_density=0.000, font_coverage=1.00</span></li></ul></div>
+  </div>
+
+  <div class="card" style="margin-top:10px">
+    <b>Class B — Scanned legal / procedural</b> <span class="pill">Examples: 2013-E.C-Procurement-information, Security_Vulnerability_Disclosure_Standard_Procedure_1</span>
+    <ul class="small">
+      <li><b>Zero-text extraction:</b> scanned PDFs carry no character stream; fast extractors return empty content. Root cause: raster-only pages.</li>
+      <li><b>Clause/list boundary loss:</b> procedural docs use numbering/indentation; OCR may merge lines or drop punctuation, corrupting downstream chunking.</li>
+    </ul>
+    <div class="callout warn small"><b>Mitigation:</b> Route scanned to Strategy C (Vision). Budget cap is enforced; non-budget failures degrade gracefully with <code>metadata.degraded=true</code> (no silent pass).</div>
+    <div class="callout small" style="margin-top:8px"><b>Measured signals:</b><ul class='small'><li><code>2013-E.C-Procurement-information</code> — scanned_image / figure_heavy — <span class='mono'>char_density=0.000000, image_density=1.000, table_density=0.000, font_coverage=0.00</span></li><li><code>Security_Vulnerability_Disclosure_Standard_Procedure_1</code> — scanned_image / figure_heavy — <span class='mono'>char_density=0.000000, image_density=1.000, table_density=0.000, font_coverage=0.00</span></li><li><code>Audit Report - 2023</code> — scanned_image / figure_heavy — <span class='mono'>char_density=0.000023, image_density=0.902, table_density=0.000, font_coverage=0.10</span></li></ul></div>
+  </div>
+
+  <div class="card" style="margin-top:10px">
+    <b>Class C — Mixed assessment / mixed-mode</b> <span class="pill">Examples: CBE ANNUAL REPORT 2023-24, fta_performance_survey_final_report_2022</span>
+    <ul class="small">
+      <li><b>Document-level classification hides page variance:</b> mixed docs combine digital text pages and image-heavy pages (scanned inserts / full-page figures). Root cause: per-page origin differs.</li>
+      <li><b>Form-fillable semantics:</b> some docs include annotation layers; pure text extraction can miss user-facing form semantics. Root cause: content split across layers.</li>
+    </ul>
+    <div class="callout small"><b>Mitigation:</b> Start with Strategy B for mixed; escalate to Strategy C when Strategy B confidence <code>0.7</code> or content coverage is insufficient.</div>
+    <div class="callout small" style="margin-top:8px"><b>Measured signals:</b><ul class='small'><li><code>CBE ANNUAL REPORT 2023-24</code> — mixed / figure_heavy — <span class='mono'>char_density=0.001050, image_density=0.556, table_density=0.000, font_coverage=0.80</span></li><li><code>fta_performance_survey_final_report_2022</code> — form_fillable / multi_column — <span class='mono'>char_density=0.005237, image_density=0.007, table_density=0.040, font_coverage=1.00</span></li><li><code>20191010_Pharmaceutical-Manufacturing-Opportunites-in-Ethiopia_VF</code> — native_digital / multi_column — <span class='mono'>char_density=0.000737, image_density=0.449, table_density=1.019, font_coverage=1.00</span></li></ul></div>
+  </div>
+
+  <div class="card" style="margin-top:10px">
+    <b>Class D — Table-heavy fiscal</b> <span class="pill">Examples: Consumer Price Index August 2025</span>
+    <ul class="small">
+      <li><b>Dense table boundary ambiguity:</b> CPI/statistical tables may include merged headers and multi-line cells; heuristic table detectors may under/over-segment. Root cause: table structure not explicit in PDF stream.</li>
+      <li><b>Provenance ambiguity when flattened:</b> without cell-level bboxes, citations become non-auditable. Root cause: losing structured table objects.</li>
+    </ul>
+    <div class="callout small"><b>Mitigation:</b> Prefer Strategy B for native table-heavy docs; prefer Strategy C for scanned/form-fillable. Preserve tables using <code>TableCell</code> objects with bboxes.</div>
+    <div class="callout small" style="margin-top:8px"><b>Measured signals:</b><ul class='small'><li><code>Consumer Price Index August 2025</code> — form_fillable / table_heavy — <span class='mono'>char_density=0.002901, image_density=0.129, table_density=0.749, font_coverage=1.00</span></li></ul></div>
+  </div>
+
+  <h3>1.3 Extraction strategy decision tree (selection + escalation)</h3>
+  <div class="svg-wrap"><svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520" role="img" aria-label="Extraction strategy decision tree">
+  <defs>
+    <style>
+      .box{fill:#ffffff;stroke:#cbd5e1;stroke-width:2;rx:14;}
+      .title{font:700 14px ui-sans-serif,system-ui;fill:#0f172a;}
+      .text{font:12px ui-sans-serif,system-ui;fill:#334155;}
+      .small{font:11px ui-sans-serif,system-ui;fill:#475569;}
+      .arrow{stroke:#64748b;stroke-width:2;fill:none;marker-end:url(#m);} 
+      .accent{stroke:#1f6feb;}
+      .dashed{stroke-dasharray:6 6;}
+      .gate{fill:#f8fafc;stroke:#94a3b8;stroke-width:2;rx:14;}
+    </style>
+    <marker id="m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="24" width="940" height="470" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" rx="16"/>
+  <text x="40" y="52" class="title">Decision Tree: DocumentProfile → Strategy Selection → Confidence-Gated Escalation</text>
+
+  <rect x="60" y="90" width="300" height="90" class="box"/>
+  <text x="78" y="118" class="title">Input: DocumentProfile</text>
+  <text x="78" y="140" class="text">origin_type · layout_complexity · domain_hint · cost_tier</text>
+  <text x="78" y="160" class="small">Signals: avg_char_density · avg_image_density · font_coverage · table_density</text>
+
+  <rect x="420" y="90" width="230" height="70" class="gate"/>
+  <text x="438" y="118" class="title">Select initial tier</text>
+  <text x="438" y="140" class="small">(rules.yaml selection maps)</text>
+
+  <rect x="720" y="60" width="200" height="70" class="box"/>
+  <text x="738" y="88" class="title">Strategy A</text>
+  <text x="738" y="108" class="small">Fast Text</text>
+
+  <rect x="720" y="150" width="200" height="70" class="box"/>
+  <text x="738" y="178" class="title">Strategy B</text>
+  <text x="738" y="198" class="small">Layout-Aware</text>
+
+  <rect x="720" y="240" width="200" height="70" class="box"/>
+  <text x="738" y="268" class="title">Strategy C</text>
+  <text x="738" y="288" class="small">Vision (budget cap)</text>
+
+  <rect x="420" y="205" width="230" height="85" class="gate"/>
+  <text x="438" y="233" class="title">Confidence gate</text>
+  <text x="438" y="255" class="small">if conf &lt; min_threshold → escalate</text>
+  <text x="438" y="275" class="small">A→B, then B→C</text>
+
+  <rect x="60" y="335" width="860" height="130" class="gate"/>
+  <text x="78" y="365" class="title">Graceful degradation</text>
+  <text x="78" y="388" class="text">If final strategy confidence &lt; global threshold → flag for review</text>
+  <text x="78" y="410" class="small">metadata.review_required=true · routing_trace=[...] · degraded flags on vision fallback</text>
+
+  <!-- arrows -->
+  <path d="M360 135 L420 125" class="arrow"/>
+  <path d="M650 125 L720 95" class="arrow"/>
+  <path d="M650 125 L720 185" class="arrow"/>
+  <path d="M650 125 L720 275" class="arrow"/>
+
+  <path d="M820 130 L650 225" class="arrow"/>
+  <path d="M820 220 L650 245" class="arrow"/>
+  <path d="M820 310 L650 265" class="arrow"/>
+
+  <!-- escalation -->
+  <path d="M820 130 L820 150" class="arrow dashed accent"/>
+  <path d="M820 220 L820 240" class="arrow dashed accent"/>
+
+  <path d="M535 290 L535 335" class="arrow"/>
+
+  <text x="720" y="330" class="small" fill="#1f6feb">Dashed arrows = escalation</text>
+</svg>
+</div>
+  <p class="small muted">Decision logic is configured in <code>rubric/extraction/rules.yaml</code> (selection maps + thresholds + escalation rules).</p>
+
+  <h3>1.4 Pipeline diagram (quality checks + audit points)</h3>
+  <div class="svg-wrap"><svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520" role="img" aria-label="5-stage pipeline architecture">
+  <defs>
+    <style>
+      .box{fill:#ffffff;stroke:#cbd5e1;stroke-width:2;rx:14;}
+      .title{font:700 14px ui-sans-serif,system-ui;fill:#0f172a;}
+      .text{font:12px ui-sans-serif,system-ui;fill:#334155;}
+      .small{font:11px ui-sans-serif,system-ui;fill:#475569;}
+      .arrow{stroke:#64748b;stroke-width:2;fill:none;marker-end:url(#m);} 
+      .dashed{stroke-dasharray:6 6;}
+      .accent{stroke:#1f6feb;}
+      .ledger{fill:#f8fafc;stroke:#94a3b8;stroke-width:2;rx:14;}
+    </style>
+    <marker id="m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="24" width="940" height="470" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" rx="16"/>
+  <text x="40" y="52" class="title">Document Intelligence Refinery — 5-Stage Pipeline (with routing, escalation, and provenance)</text>
+
+  <!-- Stage 1 -->
+  <rect x="40" y="80" width="200" height="90" class="box"/>
+  <text x="55" y="108" class="title">1) Triage</text>
+  <text x="55" y="130" class="text">Input: PDF</text>
+  <text x="55" y="150" class="text">Output: DocumentProfile</text>
+
+  <!-- Router -->
+  <rect x="270" y="80" width="210" height="90" class="box"/>
+  <text x="285" y="108" class="title">2) Extraction Router</text>
+  <text x="285" y="130" class="text">Uses profile + rules.yaml</text>
+  <text x="285" y="150" class="text">Confidence gates + escalation</text>
+
+  <!-- Strategies -->
+  <rect x="520" y="60" width="180" height="70" class="box"/>
+  <text x="535" y="88" class="title">A) Fast Text</text>
+  <text x="535" y="108" class="small">pdfplumber</text>
+
+  <rect x="520" y="145" width="180" height="70" class="box"/>
+  <text x="535" y="173" class="title">B) Layout-Aware</text>
+  <text x="535" y="193" class="small">adapter → ExtractedDocument</text>
+
+  <rect x="520" y="230" width="180" height="70" class="box"/>
+  <text x="535" y="258" class="title">C) Vision</text>
+  <text x="535" y="278" class="small">Ollama VLM + budget cap</text>
+
+  <!-- Normalized output -->
+  <rect x="740" y="120" width="200" height="90" class="box"/>
+  <text x="755" y="148" class="title">ExtractedDocument</text>
+  <text x="755" y="170" class="small">text_blocks + tables + figures</text>
+  <text x="755" y="190" class="small">bbox + page provenance</text>
+
+  <!-- Stage 3 -->
+  <rect x="40" y="230" width="260" height="90" class="box"/>
+  <text x="55" y="258" class="title">3) Semantic Chunking</text>
+  <text x="55" y="280" class="text">Output: List[LDU]</text>
+  <text x="55" y="300" class="small">content_hash + relationships</text>
+
+  <!-- Stage 4 -->
+  <rect x="340" y="230" width="260" height="90" class="box"/>
+  <text x="355" y="258" class="title">4) PageIndex Builder</text>
+  <text x="355" y="280" class="text">Output: PageIndex tree</text>
+  <text x="355" y="300" class="small">recursive SectionNode</text>
+
+  <!-- Stage 5 -->
+  <rect x="640" y="230" width="300" height="120" class="box"/>
+  <text x="655" y="258" class="title">5) Query Interface</text>
+  <text x="655" y="280" class="text">Inputs: LDUs + PageIndex</text>
+  <text x="655" y="302" class="text">Output: Answer + ProvenanceChain</text>
+  <text x="655" y="324" class="small">navigational + semantic query modes</text>
+
+  <!-- Ledger -->
+  <rect x="40" y="360" width="420" height="110" class="ledger"/>
+  <text x="55" y="392" class="title">Provenance / Audit Ledger (cross-cutting)</text>
+  <text x="55" y="414" class="text">.refinery/extraction_ledger.json</text>
+  <text x="55" y="436" class="small">strategy_used · routing_trace · confidence · pages · estimated_cost_usd · time</text>
+
+  <!-- Arrows -->
+  <path d="M240 125 L270 125" class="arrow"/>
+  <path d="M480 125 L520 95" class="arrow"/>
+  <path d="M480 125 L520 180" class="arrow"/>
+  <path d="M480 125 L520 265" class="arrow"/>
+
+  <path d="M700 95 L740 150" class="arrow"/>
+  <path d="M700 180 L740 150" class="arrow"/>
+  <path d="M700 265 L740 150" class="arrow"/>
+
+  <!-- Escalation dashed -->
+  <path d="M610 130 L610 145" class="arrow dashed accent"/>
+  <path d="M610 215 L610 230" class="arrow dashed accent"/>
+
+  <!-- From ExtractedDocument to stages 3/4 -->
+  <path d="M740 165 L300 275" class="arrow"/>
+  <path d="M740 165 L600 275" class="arrow"/>
+
+  <!-- To query -->
+  <path d="M300 275 L640 275" class="arrow"/>
+  <path d="M600 275 L640 275" class="arrow"/>
+
+  <!-- Ledger taps -->
+  <path d="M380 170 L240 360" class="arrow dashed"/>
+  <path d="M740 200 L460 415" class="arrow dashed"/>
+  <path d="M170 320 L170 360" class="arrow dashed"/>
+  <path d="M470 320 L270 360" class="arrow dashed"/>
+
+  <text x="515" y="333" class="small" fill="#1f6feb">Dashed = monitoring / escalation / audit</text>
+</svg>
+</div>
+</section>
+
+<section id="arch" class="page-break">
+  <h2>2) Architecture Diagram — 5-Stage Pipeline with Strategy Routing</h2>
+
+  <div class="callout">
+    <b>Non-linearity:</b> the pipeline branches into strategy tiers and can re-enter extraction via escalation; audit logging is cross-cutting.
+  </div>
+
+  <div class="svg-wrap"><svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520" role="img" aria-label="5-stage pipeline architecture">
+  <defs>
+    <style>
+      .box{fill:#ffffff;stroke:#cbd5e1;stroke-width:2;rx:14;}
+      .title{font:700 14px ui-sans-serif,system-ui;fill:#0f172a;}
+      .text{font:12px ui-sans-serif,system-ui;fill:#334155;}
+      .small{font:11px ui-sans-serif,system-ui;fill:#475569;}
+      .arrow{stroke:#64748b;stroke-width:2;fill:none;marker-end:url(#m);} 
+      .dashed{stroke-dasharray:6 6;}
+      .accent{stroke:#1f6feb;}
+      .ledger{fill:#f8fafc;stroke:#94a3b8;stroke-width:2;rx:14;}
+    </style>
+    <marker id="m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="24" width="940" height="470" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" rx="16"/>
+  <text x="40" y="52" class="title">Document Intelligence Refinery — 5-Stage Pipeline (with routing, escalation, and provenance)</text>
+
+  <!-- Stage 1 -->
+  <rect x="40" y="80" width="200" height="90" class="box"/>
+  <text x="55" y="108" class="title">1) Triage</text>
+  <text x="55" y="130" class="text">Input: PDF</text>
+  <text x="55" y="150" class="text">Output: DocumentProfile</text>
+
+  <!-- Router -->
+  <rect x="270" y="80" width="210" height="90" class="box"/>
+  <text x="285" y="108" class="title">2) Extraction Router</text>
+  <text x="285" y="130" class="text">Uses profile + rules.yaml</text>
+  <text x="285" y="150" class="text">Confidence gates + escalation</text>
+
+  <!-- Strategies -->
+  <rect x="520" y="60" width="180" height="70" class="box"/>
+  <text x="535" y="88" class="title">A) Fast Text</text>
+  <text x="535" y="108" class="small">pdfplumber</text>
+
+  <rect x="520" y="145" width="180" height="70" class="box"/>
+  <text x="535" y="173" class="title">B) Layout-Aware</text>
+  <text x="535" y="193" class="small">adapter → ExtractedDocument</text>
+
+  <rect x="520" y="230" width="180" height="70" class="box"/>
+  <text x="535" y="258" class="title">C) Vision</text>
+  <text x="535" y="278" class="small">Ollama VLM + budget cap</text>
+
+  <!-- Normalized output -->
+  <rect x="740" y="120" width="200" height="90" class="box"/>
+  <text x="755" y="148" class="title">ExtractedDocument</text>
+  <text x="755" y="170" class="small">text_blocks + tables + figures</text>
+  <text x="755" y="190" class="small">bbox + page provenance</text>
+
+  <!-- Stage 3 -->
+  <rect x="40" y="230" width="260" height="90" class="box"/>
+  <text x="55" y="258" class="title">3) Semantic Chunking</text>
+  <text x="55" y="280" class="text">Output: List[LDU]</text>
+  <text x="55" y="300" class="small">content_hash + relationships</text>
+
+  <!-- Stage 4 -->
+  <rect x="340" y="230" width="260" height="90" class="box"/>
+  <text x="355" y="258" class="title">4) PageIndex Builder</text>
+  <text x="355" y="280" class="text">Output: PageIndex tree</text>
+  <text x="355" y="300" class="small">recursive SectionNode</text>
+
+  <!-- Stage 5 -->
+  <rect x="640" y="230" width="300" height="120" class="box"/>
+  <text x="655" y="258" class="title">5) Query Interface</text>
+  <text x="655" y="280" class="text">Inputs: LDUs + PageIndex</text>
+  <text x="655" y="302" class="text">Output: Answer + ProvenanceChain</text>
+  <text x="655" y="324" class="small">navigational + semantic query modes</text>
+
+  <!-- Ledger -->
+  <rect x="40" y="360" width="420" height="110" class="ledger"/>
+  <text x="55" y="392" class="title">Provenance / Audit Ledger (cross-cutting)</text>
+  <text x="55" y="414" class="text">.refinery/extraction_ledger.json</text>
+  <text x="55" y="436" class="small">strategy_used · routing_trace · confidence · pages · estimated_cost_usd · time</text>
+
+  <!-- Arrows -->
+  <path d="M240 125 L270 125" class="arrow"/>
+  <path d="M480 125 L520 95" class="arrow"/>
+  <path d="M480 125 L520 180" class="arrow"/>
+  <path d="M480 125 L520 265" class="arrow"/>
+
+  <path d="M700 95 L740 150" class="arrow"/>
+  <path d="M700 180 L740 150" class="arrow"/>
+  <path d="M700 265 L740 150" class="arrow"/>
+
+  <!-- Escalation dashed -->
+  <path d="M610 130 L610 145" class="arrow dashed accent"/>
+  <path d="M610 215 L610 230" class="arrow dashed accent"/>
+
+  <!-- From ExtractedDocument to stages 3/4 -->
+  <path d="M740 165 L300 275" class="arrow"/>
+  <path d="M740 165 L600 275" class="arrow"/>
+
+  <!-- To query -->
+  <path d="M300 275 L640 275" class="arrow"/>
+  <path d="M600 275 L640 275" class="arrow"/>
+
+  <!-- Ledger taps -->
+  <path d="M380 170 L240 360" class="arrow dashed"/>
+  <path d="M740 200 L460 415" class="arrow dashed"/>
+  <path d="M170 320 L170 360" class="arrow dashed"/>
+  <path d="M470 320 L270 360" class="arrow dashed"/>
+
+  <text x="515" y="333" class="small" fill="#1f6feb">Dashed = monitoring / escalation / audit</text>
+</svg>
+</div>
+
+  <div class="card" style="margin-top:12px">
+    <h3>Stage responsibilities (inputs → outputs)</h3>
+    <table>
+      <thead>
+        <tr><th>Stage</th><th>Input</th><th>Output</th><th>Key responsibilities</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1) Triage</td><td>PDF</td><td>DocumentProfile</td><td>origin_type, layout_complexity, domain_hint, cost tier, triage_confidence</td></tr>
+        <tr><td>2) Extraction Router</td><td>(PDF, DocumentProfile)</td><td>ExtractedDocument</td><td>Select A/B/C; compute confidence; escalate; log ledger</td></tr>
+        <tr><td>3) Semantic Chunker</td><td>ExtractedDocument</td><td>List[LDU]</td><td>Constitution rules; content_hash; chunk relationships</td></tr>
+        <tr><td>4) PageIndex Builder</td><td>ExtractedDocument</td><td>PageIndex</td><td>Recursive SectionNode hierarchy with page ranges</td></tr>
+        <tr><td>5) Query Interface</td><td>(LDUs, PageIndex)</td><td>Answer + ProvenanceChain</td><td>Navigation + retrieval with citations</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h3>Provenance layer</h3>
+    <ul class="small">
+      <li><code>.refinery/extraction_ledger.json</code> captures routing_trace, strategy_used, confidence, time, and estimated_cost_usd.</li>
+      <li>LDUs carry spatial provenance and hashes; query answers return a <code>ProvenanceChain</code> for auditability.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="cost" class="page-break">
+  <h2>3) Cost Analysis — Per-document estimates by strategy tier</h2>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Numerical estimates (config-driven)</h3>
+      <ul class="small">
+        <li>Tier A (Fast Text): <b>$0.00</b> / page</li>
+        <li>Tier B (Layout-Aware): <b>$0.01</b> / page</li>
+        <li>Tier C (Vision): <b>$0.50</b> / page</li>
+        <li>Budget cap (Vision): <b>$5.00</b> / document</li>
+      </ul>
+      <div class="callout small">These values live in <code>rules.yaml</code> so budgeting can be tuned without code changes.</div>
+    </div>
+
+    <div class="card">
+      <h3>Derivation transparency (explicit chain)</h3>
+      <ul class="small">
+        <li><b>Tier A/B monetary cost:</b> treated as ~$0 (local compute) for interim; we still track <i>processing time</i> empirically via the ledger.</li>
+        <li><b>Tier C monetary cost:</b> we model an <i>effective</i> VLM price via:
+          <ul>
+            <li>estimated tokens/page = <code>700</code></li>
+            <li>assumed effective price (vision+image overhead) ≈ <code>$0.70 / 1K tokens</code></li>
+            <li>cost/page ≈ tokens/page ÷ 1000 × price ≈ 700/1000×0.70 ≈ <b>$0.49</b> ≈ configured <b>$0.50</b></li>
+          </ul>
+        </li>
+        <li>Processing time uses observed ledger time for processed pages, and projects linearly to full document length for planning.</li>
+        <li>Cost varies across classes via (a) page count and (b) routing: scanned/table-heavy docs trigger higher tiers.</li>
+      </ul>
+      <div class="callout warn small"><b>Quality ↔ cost link:</b> Tier B preserves tables/figures/reading order; Tier C recovers text from scanned pages when A/B fail.</div>
+    </div>
+  </div>
+
+  <h3>3.1 Per-document cost & time table (corpus variation)</h3>
+  <div class="card"><table><thead><tr><th>Document</th><th>Origin</th><th>Layout</th><th>Domain</th><th>Pages</th><th>Obs. strategy</th><th>Obs. conf</th><th>Time (1p)</th><th>Est $ Tier A</th><th>Est $ Tier B</th><th>Est $ Tier C (cap)</th><th>Vision pages</th><th>Linear time est.</th></tr></thead><tbody><tr><td>fta_performance_survey_final_report_2022</td><td>form_fillable</td><td>multi_column</td><td>financial</td><td><span class='right'>155</span></td><td>vision</td><td>0.645</td><td>2.42s</td><td>$0.15</td><td>$1.55</td><td>$5.00</td><td>10</td><td>375.33s</td></tr><tr><td>Consumer Price Index August 2025</td><td>form_fillable</td><td>table_heavy</td><td>financial</td><td><span class='right'>13</span></td><td>vision</td><td>0.655</td><td>3.05s</td><td>$0.01</td><td>$0.13</td><td>$5.00</td><td>10</td><td>39.69s</td></tr><tr><td>CBE ANNUAL REPORT 2023-24</td><td>mixed</td><td>figure_heavy</td><td>financial</td><td><span class='right'>161</span></td><td>vision</td><td>0.660</td><td>4.81s</td><td>$0.16</td><td>$1.61</td><td>$5.00</td><td>10</td><td>774.44s</td></tr><tr><td>20191010_Pharmaceutical-Manufacturing-Opportunites-in-Ethiopia_VF</td><td>native_digital</td><td>multi_column</td><td>legal</td><td><span class='right'>15</span></td><td>vision</td><td>0.801</td><td>2.40s</td><td>$0.01</td><td>$0.15</td><td>$5.00</td><td>10</td><td>36.04s</td></tr><tr><td>Annual_Report_JUNE-2023</td><td>native_digital</td><td>multi_column</td><td>financial</td><td><span class='right'>104</span></td><td>vision</td><td>0.665</td><td>3.25s</td><td>$0.10</td><td>$1.04</td><td>$5.00</td><td>10</td><td>337.70s</td></tr><tr><td>tax_expenditure_ethiopia_2021_22</td><td>native_digital</td><td>single_column</td><td>financial</td><td><span class='right'>60</span></td><td>fast_text</td><td>0.996</td><td>0.13s</td><td>$0.06</td><td>$0.60</td><td>$5.00</td><td>10</td><td>7.52s</td></tr><tr><td>2013-E.C-Assigned-regular-budget-and-expense</td><td>scanned_image</td><td>figure_heavy</td><td>general</td><td><span class='right'>3</span></td><td>vision</td><td>0.690</td><td>2.52s</td><td>$0.00</td><td>$0.03</td><td>$1.50</td><td>3</td><td>7.56s</td></tr><tr><td>2013-E.C-Audit-finding-information</td><td>scanned_image</td><td>figure_heavy</td><td>general</td><td><span class='right'>3</span></td><td>vision</td><td>0.700</td><td>2.37s</td><td>$0.00</td><td>$0.03</td><td>$1.50</td><td>3</td><td>7.10s</td></tr><tr><td>2013-E.C-Procurement-information</td><td>scanned_image</td><td>figure_heavy</td><td>general</td><td><span class='right'>3</span></td><td>vision</td><td>0.690</td><td>2.25s</td><td>$0.00</td><td>$0.03</td><td>$1.50</td><td>3</td><td>6.74s</td></tr><tr><td>2018_Audited_Financial_Statement_Report</td><td>scanned_image</td><td>figure_heavy</td><td>general</td><td><span class='right'>3</span></td><td>vision</td><td>0.690</td><td>2.49s</td><td>$0.00</td><td>$0.03</td><td>$1.50</td><td>3</td><td>7.48s</td></tr><tr><td>Audit Report - 2023</td><td>scanned_image</td><td>figure_heavy</td><td>financial</td><td><span class='right'>95</span></td><td>vision</td><td>0.645</td><td>2.50s</td><td>$0.10</td><td>$0.95</td><td>$5.00</td><td>10</td><td>237.44s</td></tr><tr><td>Security_Vulnerability_Disclosure_Standard_Procedure_1</td><td>scanned_image</td><td>figure_heavy</td><td>general</td><td><span class='right'>15</span></td><td>vision</td><td>0.690</td><td>2.35s</td><td>$0.01</td><td>$0.15</td><td>$5.00</td><td>10</td><td>35.31s</td></tr></tbody></table></div>
+
+  <h3>3.2 What higher-cost tiers buy us (tied to document types)</h3>
+  <div class="card">
+    <ul class="small">
+      <li><b>A → B:</b> moves from plain text stream to layout-preserved blocks with bounding boxes, plus structured tables and figures. Critical for Class A (multi-column financial) and Class D (table-heavy fiscal).</li>
+      <li><b>B → C:</b> recovers content when the PDF has no text stream (scanned images / low font coverage). Critical for Class B scanned procedural docs and mixed-mode inserts in Class C.</li>
+      <li><b>Budget control:</b> Tier C enforces <code>budget_cap_per_doc</code> and now degrades gracefully on non-budget failures (so the pipeline never silently returns empty output).</li>
+    </ul>
+
+    <div class="callout small"><b>Quality gate:</b> If final confidence remains below <code>0.8</code>, we flag <code>metadata.review_required=true</code> rather than silently passing low-fidelity extraction.</div>
+  </div>
+</section>
+
+</body>
+</html>

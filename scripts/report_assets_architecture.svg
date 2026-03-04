@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520" role="img" aria-label="5-stage pipeline architecture">
+  <defs>
+    <style>
+      .box{fill:#ffffff;stroke:#cbd5e1;stroke-width:2;rx:14;}
+      .title{font:700 14px ui-sans-serif,system-ui;fill:#0f172a;}
+      .text{font:12px ui-sans-serif,system-ui;fill:#334155;}
+      .small{font:11px ui-sans-serif,system-ui;fill:#475569;}
+      .arrow{stroke:#64748b;stroke-width:2;fill:none;marker-end:url(#m);} 
+      .dashed{stroke-dasharray:6 6;}
+      .accent{stroke:#1f6feb;}
+      .ledger{fill:#f8fafc;stroke:#94a3b8;stroke-width:2;rx:14;}
+    </style>
+    <marker id="m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="24" width="940" height="470" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" rx="16"/>
+  <text x="40" y="52" class="title">Document Intelligence Refinery — 5-Stage Pipeline (with routing, escalation, and provenance)</text>
+
+  <!-- Stage 1 -->
+  <rect x="40" y="80" width="200" height="90" class="box"/>
+  <text x="55" y="108" class="title">1) Triage</text>
+  <text x="55" y="130" class="text">Input: PDF</text>
+  <text x="55" y="150" class="text">Output: DocumentProfile</text>
+
+  <!-- Router -->
+  <rect x="270" y="80" width="210" height="90" class="box"/>
+  <text x="285" y="108" class="title">2) Extraction Router</text>
+  <text x="285" y="130" class="text">Uses profile + rules.yaml</text>
+  <text x="285" y="150" class="text">Confidence gates + escalation</text>
+
+  <!-- Strategies -->
+  <rect x="520" y="60" width="180" height="70" class="box"/>
+  <text x="535" y="88" class="title">A) Fast Text</text>
+  <text x="535" y="108" class="small">pdfplumber</text>
+
+  <rect x="520" y="145" width="180" height="70" class="box"/>
+  <text x="535" y="173" class="title">B) Layout-Aware</text>
+  <text x="535" y="193" class="small">adapter → ExtractedDocument</text>
+
+  <rect x="520" y="230" width="180" height="70" class="box"/>
+  <text x="535" y="258" class="title">C) Vision</text>
+  <text x="535" y="278" class="small">Ollama VLM + budget cap</text>
+
+  <!-- Normalized output -->
+  <rect x="740" y="120" width="200" height="90" class="box"/>
+  <text x="755" y="148" class="title">ExtractedDocument</text>
+  <text x="755" y="170" class="small">text_blocks + tables + figures</text>
+  <text x="755" y="190" class="small">bbox + page provenance</text>
+
+  <!-- Stage 3 -->
+  <rect x="40" y="230" width="260" height="90" class="box"/>
+  <text x="55" y="258" class="title">3) Semantic Chunking</text>
+  <text x="55" y="280" class="text">Output: List[LDU]</text>
+  <text x="55" y="300" class="small">content_hash + relationships</text>
+
+  <!-- Stage 4 -->
+  <rect x="340" y="230" width="260" height="90" class="box"/>
+  <text x="355" y="258" class="title">4) PageIndex Builder</text>
+  <text x="355" y="280" class="text">Output: PageIndex tree</text>
+  <text x="355" y="300" class="small">recursive SectionNode</text>
+
+  <!-- Stage 5 -->
+  <rect x="640" y="230" width="300" height="120" class="box"/>
+  <text x="655" y="258" class="title">5) Query Interface</text>
+  <text x="655" y="280" class="text">Inputs: LDUs + PageIndex</text>
+  <text x="655" y="302" class="text">Output: Answer + ProvenanceChain</text>
+  <text x="655" y="324" class="small">navigational + semantic query modes</text>
+
+  <!-- Ledger -->
+  <rect x="40" y="360" width="420" height="110" class="ledger"/>
+  <text x="55" y="392" class="title">Provenance / Audit Ledger (cross-cutting)</text>
+  <text x="55" y="414" class="text">.refinery/extraction_ledger.json</text>
+  <text x="55" y="436" class="small">strategy_used · routing_trace · confidence · pages · estimated_cost_usd · time</text>
+
+  <!-- Arrows -->
+  <path d="M240 125 L270 125" class="arrow"/>
+  <path d="M480 125 L520 95" class="arrow"/>
+  <path d="M480 125 L520 180" class="arrow"/>
+  <path d="M480 125 L520 265" class="arrow"/>
+
+  <path d="M700 95 L740 150" class="arrow"/>
+  <path d="M700 180 L740 150" class="arrow"/>
+  <path d="M700 265 L740 150" class="arrow"/>
+
+  <!-- Escalation dashed -->
+  <path d="M610 130 L610 145" class="arrow dashed accent"/>
+  <path d="M610 215 L610 230" class="arrow dashed accent"/>
+
+  <!-- From ExtractedDocument to stages 3/4 -->
+  <path d="M740 165 L300 275" class="arrow"/>
+  <path d="M740 165 L600 275" class="arrow"/>
+
+  <!-- To query -->
+  <path d="M300 275 L640 275" class="arrow"/>
+  <path d="M600 275 L640 275" class="arrow"/>
+
+  <!-- Ledger taps -->
+  <path d="M380 170 L240 360" class="arrow dashed"/>
+  <path d="M740 200 L460 415" class="arrow dashed"/>
+  <path d="M170 320 L170 360" class="arrow dashed"/>
+  <path d="M470 320 L270 360" class="arrow dashed"/>
+
+  <text x="515" y="333" class="small" fill="#1f6feb">Dashed = monitoring / escalation / audit</text>
+</svg>
