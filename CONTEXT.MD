@@ -54,5 +54,11 @@
 - After fix, `main.py` demo runs on `CBE ANNUAL REPORT 2023-24.pdf` select `layout_aware` with high confidence and produces hundreds of LDUs.
 - Tests remain green: `18 passed`.
 
+## 2026-03-05 01:37:14
+- Interim submissions completed (GitHub + Interim Report).
+- GitHub repo: https://github.com/78gk/The-Document-Intelligence-Refinery
+- Latest commit pushed: `14440c7` (Add interim report HTML + diagrams + cost analysis).
+- Repo status clean; all commits attributed to Kirubel Tewodros <kirutew17654321@gmail.com>.
+
 ## Next log entry
 - (Add the next significant decision/change here.)
