@@ -1,1 +1,455 @@
-﻿[]
+[
+  {
+    "timestamp": 1772659903.975261,
+    "doc_id": "CBE ANNUAL REPORT 2023-24",
+    "doc_path": "data/data/CBE ANNUAL REPORT 2023-24.pdf",
+    "strategy": "vision",
+    "confidence": 0.66,
+    "processing_time": 4.81019926071167,
+    "estimated_cost_usd": 3.0,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 3.0,
+      "estimated_cost_usd": 3.0,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.6,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.4
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "layout_aware",
+          "confidence": 0.44499999999999995,
+          "threshold": 0.7,
+          "escalation_triggered": true
+        },
+        {
+          "strategy": "vision",
+          "confidence": 0.66,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659913.9591887,
+    "doc_id": "Annual_Report_JUNE-2023",
+    "doc_path": "data/data/Annual_Report_JUNE-2023.pdf",
+    "strategy": "vision",
+    "confidence": 0.6649999999999999,
+    "processing_time": 3.24714732170105,
+    "estimated_cost_usd": 0.5,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 0.5,
+      "estimated_cost_usd": 0.5,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.5,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.9
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "layout_aware",
+          "confidence": 0.485,
+          "threshold": 0.7,
+          "escalation_triggered": true
+        },
+        {
+          "strategy": "vision",
+          "confidence": 0.6649999999999999,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659916.5525298,
+    "doc_id": "2018_Audited_Financial_Statement_Report",
+    "doc_path": "data/data/2018_Audited_Financial_Statement_Report.pdf",
+    "strategy": "vision",
+    "confidence": 0.69,
+    "processing_time": 2.492851734161377,
+    "estimated_cost_usd": 1.5,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 1.5,
+      "estimated_cost_usd": 1.5,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.6,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.7
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "vision",
+          "confidence": 0.69,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659919.4328694,
+    "doc_id": "Audit Report - 2023",
+    "doc_path": "data/data/Audit Report - 2023.pdf",
+    "strategy": "vision",
+    "confidence": 0.6449999999999999,
+    "processing_time": 2.4993505477905273,
+    "estimated_cost_usd": 1.5,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 1.5,
+      "estimated_cost_usd": 1.5,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.5,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.7
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "vision",
+          "confidence": 0.6449999999999999,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659921.9058626,
+    "doc_id": "2013-E.C-Audit-finding-information",
+    "doc_path": "data/data/2013-E.C-Audit-finding-information.pdf",
+    "strategy": "vision",
+    "confidence": 0.7,
+    "processing_time": 2.3671839237213135,
+    "estimated_cost_usd": 1.0,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 1.0,
+      "estimated_cost_usd": 1.0,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.6,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.8
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "vision",
+          "confidence": 0.7,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659924.510203,
+    "doc_id": "2013-E.C-Assigned-regular-budget-and-expense",
+    "doc_path": "data/data/2013-E.C-Assigned-regular-budget-and-expense.pdf",
+    "strategy": "vision",
+    "confidence": 0.69,
+    "processing_time": 2.5184760093688965,
+    "estimated_cost_usd": 1.5,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 1.5,
+      "estimated_cost_usd": 1.5,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.6,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.7
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "vision",
+          "confidence": 0.69,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659929.4328494,
+    "doc_id": "fta_performance_survey_final_report_2022",
+    "doc_path": "data/data/fta_performance_survey_final_report_2022.pdf",
+    "strategy": "vision",
+    "confidence": 0.6449999999999999,
+    "processing_time": 2.4215006828308105,
+    "estimated_cost_usd": 1.5,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 1.5,
+      "estimated_cost_usd": 1.5,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.5,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.7
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "vision",
+          "confidence": 0.6449999999999999,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659932.5142882,
+    "doc_id": "20191010_Pharmaceutical-Manufacturing-Opportunites-in-Ethiopia_VF",
+    "doc_path": "data/data/20191010_Pharmaceutical-Manufacturing-Opportunites-in-Ethiopia_VF.pdf",
+    "strategy": "vision",
+    "confidence": 0.801,
+    "processing_time": 2.4024507999420166,
+    "estimated_cost_usd": 0.5,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 0.5,
+      "estimated_cost_usd": 0.5,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.58,
+        "content_coverage": 1.0,
+        "structure_score": 1.0,
+        "budget_headroom": 0.9
+      },
+      "routing_trace": [
+        {
+          "strategy": "layout_aware",
+          "confidence": 0.6571818181818182,
+          "threshold": 0.7,
+          "escalation_triggered": true
+        },
+        {
+          "strategy": "vision",
+          "confidence": 0.801,
+          "threshold": 0.8,
+          "escalation_triggered": false
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659934.9489288,
+    "doc_id": "Security_Vulnerability_Disclosure_Standard_Procedure_1",
+    "doc_path": "data/data/Security_Vulnerability_Disclosure_Standard_Procedure_1.pdf",
+    "strategy": "vision",
+    "confidence": 0.69,
+    "processing_time": 2.354074001312256,
+    "estimated_cost_usd": 1.5,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 1.5,
+      "estimated_cost_usd": 1.5,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.6,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.7
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "vision",
+          "confidence": 0.69,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659936.8332222,
+    "doc_id": "tax_expenditure_ethiopia_2021_22",
+    "doc_path": "data/data/tax_expenditure_ethiopia_2021_22.pdf",
+    "strategy": "fast_text",
+    "confidence": 0.9962296407968592,
+    "processing_time": 0.1253206729888916,
+    "estimated_cost_usd": 0.001,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "FastTextExtractor",
+      "signals": {
+        "char_count": 131.0,
+        "char_density": 0.00026148742273122505,
+        "font_coverage": 1.0,
+        "image_area_ratio": 0.025135728020938563
+      },
+      "pages_processed": 1,
+      "estimated_cost_usd": 0.001,
+      "routing_trace": [
+        {
+          "strategy": "fast_text",
+          "confidence": 0.9962296407968592,
+          "threshold": 0.8,
+          "escalation_triggered": false
+        }
+      ],
+      "strategy_used": "fast_text"
+    }
+  },
+  {
+    "timestamp": 1772659939.1367068,
+    "doc_id": "2013-E.C-Procurement-information",
+    "doc_path": "data/data/2013-E.C-Procurement-information.pdf",
+    "strategy": "vision",
+    "confidence": 0.69,
+    "processing_time": 2.2467551231384277,
+    "estimated_cost_usd": 1.5,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 1.5,
+      "estimated_cost_usd": 1.5,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.6,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.7
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "vision",
+          "confidence": 0.69,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  },
+  {
+    "timestamp": 1772659948.770415,
+    "doc_id": "Consumer Price Index August 2025",
+    "doc_path": "data/data/Consumer Price Index August 2025.pdf",
+    "strategy": "vision",
+    "confidence": 0.655,
+    "processing_time": 3.052795648574829,
+    "estimated_cost_usd": 1.0,
+    "pages_processed": 1,
+    "metadata": {
+      "strategy": "VisionExtractor",
+      "provider": "ollama",
+      "model": "llava:13b",
+      "total_spend": 1.0,
+      "estimated_cost_usd": 1.0,
+      "budget_cap_per_doc": 5.0,
+      "estimated_tokens": 700,
+      "pages_processed": 1,
+      "confidence_signals": {
+        "mean_model_confidence": 0.5,
+        "content_coverage": 1.0,
+        "structure_score": 0.5,
+        "budget_headroom": 0.8
+      },
+      "review_required": true,
+      "low_confidence_reason": "All strategies failed confidence thresholds",
+      "routing_trace": [
+        {
+          "strategy": "vision",
+          "confidence": 0.655,
+          "threshold": 0.8,
+          "escalation_triggered": true
+        }
+      ],
+      "strategy_used": "vision"
+    }
+  }
+]

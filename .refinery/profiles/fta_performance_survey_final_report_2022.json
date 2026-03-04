@@ -1,0 +1,35 @@
+{
+  "doc_id": "fta_performance_survey_final_report_2022",
+  "origin_type": "form_fillable",
+  "layout_complexity": "multi_column",
+  "language": "en",
+  "language_confidence": 0.99,
+  "domain_hint": "financial",
+  "domain_label": "financial",
+  "extraction_cost_estimate": "needs_vision_model",
+  "triage_confidence": 0.9169770536515516,
+  "metadata": {
+    "page_count": 155,
+    "file_size_kb": 2812.91796875,
+    "analysis": {
+      "avg_chars_per_page": 2624.7,
+      "avg_char_density": 0.005236708163278284,
+      "avg_whitespace_ratio": 0.7581269235010282,
+      "avg_images_per_page": 0.1,
+      "multi_column_signals": 6,
+      "avg_table_density": 0.03951796464902802,
+      "avg_image_density": 0.007258009279679105,
+      "font_coverage": 1.0,
+      "form_field_pages": 5,
+      "scanned_like_pages": 0,
+      "digital_like_pages": 10,
+      "variance_penalty": 0.21684530782693343,
+      "page_variance": {
+        "char_density_cv": 0.6505359234808002,
+        "font_coverage_cv": 0.0,
+        "image_density_cv": 0.0
+      },
+      "language_confidence": 0.99
+    }
+  }
+}

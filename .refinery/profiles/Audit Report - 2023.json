@@ -1,0 +1,35 @@
+{
+  "doc_id": "Audit Report - 2023",
+  "origin_type": "scanned_image",
+  "layout_complexity": "figure_heavy",
+  "language": "en",
+  "language_confidence": 0.99,
+  "domain_hint": "financial",
+  "domain_label": "financial",
+  "extraction_cost_estimate": "needs_vision_model",
+  "triage_confidence": 0.2194715636512702,
+  "metadata": {
+    "page_count": 95,
+    "file_size_kb": 20020.896484375,
+    "analysis": {
+      "avg_chars_per_page": 11.6,
+      "avg_char_density": 0.00002278763209283122,
+      "avg_whitespace_ratio": 0.9890109229449895,
+      "avg_images_per_page": 1.0,
+      "multi_column_signals": 0,
+      "avg_table_density": 0.0,
+      "avg_image_density": 0.9016207759669553,
+      "font_coverage": 0.1,
+      "form_field_pages": 0,
+      "scanned_like_pages": 9,
+      "digital_like_pages": 1,
+      "variance_penalty": 0.5,
+      "page_variance": {
+        "char_density_cv": 2.8738840424178203,
+        "font_coverage_cv": 2.999970000299997,
+        "image_density_cv": 0.32734099588814775
+      },
+      "language_confidence": 0.99
+    }
+  }
+}

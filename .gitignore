@@ -4,11 +4,19 @@ __pycache__/
 *.egg-info/
 .venv/
 
-# Refinery artifacts (keep the ledger, ignore the rest)
+# Refinery artifacts
+# Track required interim artifacts, ignore the rest.
 .refinery/*
-!.refinery/extraction_ledger.json
 !.refinery/.gitkeep
+!.refinery/extraction_ledger.json
+!.refinery/profiles/
+!.refinery/profiles/**
+!.refinery/pageindex/
+!.refinery/pageindex/**
+
+# Ignore local databases/budgets and other large run artifacts
 .refinery/**/*.db
+.refinery/vision_budget_ledger.json
 
 # Input corpora (avoid pushing large PDFs by default)
 data/

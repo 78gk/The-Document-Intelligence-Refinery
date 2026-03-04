@@ -138,6 +138,9 @@ class LayoutAwareExtractor(BaseExtractor):
             return self._empty_doc(doc_id, start_time, str(e))
 
         end_time = time.time()
+        pages_processed = len(external_payload.get('pages', [])) if isinstance(external_payload, dict) else 0
+        estimated_cost_usd = float(self.config.get('extraction', {}).get('layout_aware', {}).get('estimated_cost_per_page', 0.0)) * max(1, pages_processed)
+
         doc = ExtractedDocument(
             doc_id=doc_id,
             metadata={
@@ -148,6 +151,8 @@ class LayoutAwareExtractor(BaseExtractor):
                 "text_blocks": len(text_blocks),
                 "tables": len(tables),
                 "figures": len(figures),
+                "pages_processed": pages_processed,
+                "estimated_cost_usd": estimated_cost_usd,
             },
             text_blocks=text_blocks,
             tables=tables,

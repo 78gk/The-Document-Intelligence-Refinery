@@ -73,6 +73,8 @@ class VisionExtractor(BaseExtractor):
                 "provider": "ollama",
                 "model": model_name,
                 "total_spend": current_spend,
+                # For interim grading: surface a consistent cost field across strategies.
+                "estimated_cost_usd": current_spend,
                 "budget_cap_per_doc": budget_cap,
                 "estimated_tokens": estimated_tokens,
                 "pages_processed": target_page_count,

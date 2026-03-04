@@ -23,7 +23,7 @@ class ExtractionRouter:
         self.ledger_path = Path(".refinery/extraction_ledger.json")
         self.ledger_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def extract(self, doc_path: str, profile: DocumentProfile) -> ExtractedDocument:
+    def extract(self, doc_path: str, profile: DocumentProfile, pages: Optional[List[int]] = None) -> ExtractedDocument:
         thresholds = self.config.get("extraction", {})
         escalation_rules = thresholds.get(
             "escalation_rules",
@@ -33,7 +33,7 @@ class ExtractionRouter:
 
         selected_name = self._select_strategy_name(profile)
         trace: List[Dict[str, Any]] = []
-        doc = self._run_strategy(selected_name, doc_path, trace)
+        doc = self._run_strategy(selected_name, doc_path, trace, pages)
 
         # Multi-level confidence-gated escalation driven by config rules.
         while True:
@@ -44,7 +44,7 @@ class ExtractionRouter:
             next_name = self._find_escalation_target(current_name, escalation_rules)
             if not next_name:
                 break
-            doc = self._run_strategy(next_name, doc_path, trace)
+            doc = self._run_strategy(next_name, doc_path, trace, pages)
 
         metadata_updates: Dict[str, Any] = {}
         if doc.confidence_score < global_threshold:
@@ -80,9 +80,15 @@ class ExtractionRouter:
             return "layout_aware"
         return default_strategy
 
-    def _run_strategy(self, strategy_name: str, doc_path: str, trace: List[Dict[str, Any]]) -> ExtractedDocument:
+    def _run_strategy(
+        self,
+        strategy_name: str,
+        doc_path: str,
+        trace: List[Dict[str, Any]],
+        pages: Optional[List[int]] = None,
+    ) -> ExtractedDocument:
         strategy = self.strategy_map[strategy_name]
-        doc = strategy.extract(doc_path)
+        doc = strategy.extract(doc_path, pages=pages)
         trace.append(
             {
                 "strategy": strategy_name,
@@ -117,7 +123,10 @@ class ExtractionRouter:
             "strategy": doc.extraction_strategy.value,
             "confidence": confidence,
             "processing_time": doc.processing_time,
-            "metadata": doc.metadata
+            # promote commonly-audited fields to top-level for easier grading
+            "estimated_cost_usd": doc.metadata.get("estimated_cost_usd"),
+            "pages_processed": doc.metadata.get("pages_processed"),
+            "metadata": doc.metadata,
         }
         
         ledger_data = []

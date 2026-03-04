@@ -84,9 +84,17 @@ class FastTextExtractor(BaseExtractor):
             )
 
         end_time = time.time()
+        pages_processed = len(target_pages) if 'target_pages' in locals() else 0
+        estimated_cost_usd = float(self.config.get('extraction', {}).get('fast_text', {}).get('estimated_cost_per_page', 0.0)) * max(1, pages_processed)
+
         doc = ExtractedDocument(
             doc_id=doc_id,
-            metadata={"strategy": "FastTextExtractor", "signals": analysis_signals},
+            metadata={
+                "strategy": "FastTextExtractor",
+                "signals": analysis_signals,
+                "pages_processed": pages_processed,
+                "estimated_cost_usd": estimated_cost_usd,
+            },
             text_blocks=text_blocks,
             tables=tables,
             extraction_strategy="fast_text",

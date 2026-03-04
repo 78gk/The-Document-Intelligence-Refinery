@@ -1,0 +1,35 @@
+{
+  "doc_id": "CBE ANNUAL REPORT 2023-24",
+  "origin_type": "mixed",
+  "layout_complexity": "figure_heavy",
+  "language": "en",
+  "language_confidence": 0.99,
+  "domain_hint": "financial",
+  "domain_label": "financial",
+  "extraction_cost_estimate": "needs_layout_model",
+  "triage_confidence": 0.7441299918741503,
+  "metadata": {
+    "page_count": 161,
+    "file_size_kb": 29173.7822265625,
+    "analysis": {
+      "avg_chars_per_page": 526.2,
+      "avg_char_density": 0.0010499705536895587,
+      "avg_whitespace_ratio": 0.9281924068806402,
+      "avg_images_per_page": 2.4,
+      "multi_column_signals": 4,
+      "avg_table_density": 0.0,
+      "avg_image_density": 0.5559444895880542,
+      "font_coverage": 0.8,
+      "form_field_pages": 0,
+      "scanned_like_pages": 3,
+      "digital_like_pages": 7,
+      "variance_penalty": 0.5,
+      "page_variance": {
+        "char_density_cv": 1.3852629521371056,
+        "font_coverage_cv": 0.49999937500078123,
+        "image_density_cv": 0.5075142403334021
+      },
+      "language_confidence": 0.99
+    }
+  }
+}
