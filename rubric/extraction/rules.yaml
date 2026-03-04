@@ -1,0 +1,142 @@
+# Document Intelligence Refinery Rules & Thresholds
+
+extraction:
+  graceful_degradation_threshold: 0.8 # Global minimum confidence for production-ready data
+  default_min_confidence_threshold: 0.8
+  escalation_rules:
+    - from: "fast_text"
+      to: "layout_aware"
+    - from: "layout_aware"
+      to: "vision"
+  selection:
+    origin_type_strategy:
+      scanned_image: "vision"
+      form_fillable: "vision"
+      mixed: "layout_aware"
+    cost_tier_strategy:
+      fast_text_sufficient: "fast_text"
+      needs_layout_model: "layout_aware"
+      needs_vision_model: "vision"
+    default_strategy: "fast_text"
+  fast_text:
+    min_char_count_per_page: 100
+    min_char_density: 0.0001
+    max_image_area_ratio: 0.5
+    min_confidence_threshold: 0.8
+    confidence_weights:
+      char_count: 0.25
+      char_density: 0.35
+      font_coverage: 0.25
+      image_quality: 0.15
+  layout_aware:
+    tool_name: "Docling"
+    adapter_mode: "pdfplumber" # set to "external_command" to use a real external layout tool adapter
+    external_command:
+      command_template: [] # e.g. ["python", "scripts/docling_adapter.py", "--doc", "{doc_path}", "--pages", "{pages}"]
+      timeout_seconds: 120
+    min_confidence_threshold: 0.7
+    target_text_blocks: 10
+    target_structured_blocks: 2
+    confidence_weights:
+      block_quality: 0.35
+      structure_quality: 0.35
+      model_confidence: 0.20
+      reading_order: 0.10
+  vision:
+    budget_cap_per_doc: 5.0  # USD
+    model: "llava:13b"
+    ollama_endpoint: "http://localhost:11434/api/chat"
+    request_timeout_seconds: 90
+    temperature: 0.0
+    response_schema_prompt: "Return STRICT JSON with keys text_blocks, tables, figures. text_blocks -> {text,bbox:[x0,y0,x1,y1],confidence}; tables -> {caption,headers,rows,bbox:[x0,y0,x1,y1],confidence}; figures -> {caption,bbox:[x0,y0,x1,y1],confidence}."
+    user_prompt: "Extract readable text, tables (headers + rows), and figure captions with approximate bounding boxes."
+    estimated_cost_per_page: 0.5
+    avg_tokens_per_page: 700
+    default_page_count: 1
+    target_structured_elements: 2
+    confidence_weights:
+      model_confidence: 0.45
+      content_coverage: 0.25
+      structure_score: 0.20
+      budget_headroom: 0.10
+    budget_ledger_path: ".refinery/vision_budget_ledger.json"
+
+classification:
+  max_sample_pages: 10
+  origin_types:
+    scanned_if_chars_less_than: 50
+    scanned_char_density_max: 0.00005
+    scanned_image_density_min: 0.02
+    scanned_whitespace_ratio_min: 0.80
+    font_coverage_min: 0.20
+    native_char_density_target: 0.0002
+    form_fillable_annotation_ratio: 0.10
+    mixed_page_ratio_min: 0.20
+    scanned_page_requires_image_signal: false
+  layout_complexity:
+    multi_column_threshold: 1.5    # Average gap / median char width
+    multi_column_min_chars: 100
+    min_char_width_default: 1.0
+    multi_column_signal_ratio: 0.4
+    table_heavy_density: 0.3       # Table area / Page area
+    figure_heavy_density: 0.1      # Image area / Page area
+    mixed_table_density_min: 0.05
+    mixed_figure_density_min: 0.05
+  triage_confidence_weights:
+    char_density: 0.30
+    font_coverage: 0.30
+    image_signal: 0.20
+    domain_classifier: 0.20
+  triage_confidence_variance:
+    weight: 0.20
+    epsilon: 0.000001
+    max_penalty: 0.50
+  language_detection:
+    default_language: "unknown"
+    default_confidence: 0.20
+    max_confidence: 0.99
+    keyword_map:
+      en: ["the", "and", "for", "with", "report", "agreement"]
+      es: ["el", "la", "de", "para", "informe", "acuerdo"]
+      fr: ["le", "la", "de", "pour", "rapport", "accord"]
+  domain_classifier:
+    min_keyword_hits: 1
+    default_domain: "general"
+    no_match_confidence: 0.6
+    hit_confidence_increment: 0.1
+    max_confidence: 0.99
+  domain_taxonomy:
+    - financial
+    - legal
+    - technical
+    - medical
+    - regulatory
+    - general
+    - other
+  domain_hint_map:
+    financial: financial
+    legal: legal
+    technical: technical
+    medical: medical
+    regulatory: regulatory
+    general: general
+  domain_classification:
+    financial: ["financial", "revenue", "balance sheet", "audit", "fiscal", "profit", "loss"]
+    legal: ["legal", "contract", "agreement", "article", "provision", "clause"]
+    technical: ["technical", "specification", "architecture", "system", "implementation"]
+    medical: ["medical", "clinical", "patient", "treatment", "diagnosis"]
+    regulatory: ["compliance", "regulation", "policy", "governance", "directive"]
+
+chunking:
+  max_tokens_per_chunk: 512
+  overlap_tokens: 50
+  rules:
+    list_split_max_tokens: 256
+    add_continuation_markers: true
+    propagate_section_headers: true
+  constitution:
+    - "Table cells never split from headers"
+    - "Figure captions stored as parent metadata"
+    - "Numbered lists kept intact unless > max_tokens"
+    - "Section headers propagated as parent metadata"
+    - "Contextual markers [CONT] added to split paragraphs" # 5th Rule

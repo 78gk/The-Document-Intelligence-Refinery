@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Refinery artifacts (keep the ledger, ignore the rest)
+.refinery/*
+!.refinery/extraction_ledger.json
+!.refinery/.gitkeep
+.refinery/**/*.db
+
+# Input corpora (avoid pushing large PDFs by default)
+data/
+
+# Local logs
+pytest_output.txt
+test_output.txt
+
+# OS
+.DS_Store
+Thumbs.db

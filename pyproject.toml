@@ -1,0 +1,27 @@
+[project]
+name = "document-intelligence-refinery"
+version = "0.1.0"
+description = "Enterprise document intelligence pipeline"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0.0",
+    "numpy>=1.22.0",
+    "pdfplumber>=0.10.0",
+]
+
+[project.optional-dependencies]
+# Keep heavyweight and/or optional integrations out of the default install so
+# `pip install -e .` stays fast for the interim submission and automated tests.
+dev = [
+    "pytest>=7.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
