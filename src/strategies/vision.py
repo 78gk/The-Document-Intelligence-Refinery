@@ -31,6 +31,59 @@ class VisionExtractor(BaseExtractor):
         budget_file = Path(cfg.get("budget_ledger_path", ".refinery/vision_budget_ledger.json"))
         budget_file.parent.mkdir(parents=True, exist_ok=True)
 
+        def _finalize(
+            *,
+            text_blocks: List[TextBlock],
+            tables: List[TableBlock],
+            figures: List[FigureBlock],
+            target_page_count: int,
+            current_spend: float,
+            degraded: bool,
+            degraded_reason: Optional[str] = None,
+        ) -> ExtractedDocument:
+            estimated_tokens = int(cfg.get("avg_tokens_per_page", 700) * max(1, target_page_count))
+            confidence_signals = self._build_confidence_signals(
+                text_blocks=text_blocks,
+                tables=tables,
+                figures=figures,
+                target_page_count=target_page_count,
+                current_spend=current_spend,
+                budget_cap=budget_cap,
+            )
+            confidence_score = self.get_confidence_score(None, signals=confidence_signals)
+            end_time = time.time()
+            metadata: Dict[str, Any] = {
+                "strategy": "VisionExtractor",
+                "provider": "ollama",
+                "model": model_name,
+                "total_spend": current_spend,
+                # For interim grading: surface a consistent cost field across strategies.
+                "estimated_cost_usd": current_spend,
+                "budget_cap_per_doc": budget_cap,
+                "estimated_tokens": estimated_tokens,
+                "pages_processed": target_page_count,
+                "confidence_signals": confidence_signals,
+            }
+            if degraded:
+                metadata["degraded"] = True
+                if degraded_reason:
+                    metadata["degraded_reason"] = degraded_reason
+
+            return ExtractedDocument(
+                doc_id=doc_id,
+                metadata=metadata,
+                text_blocks=text_blocks,
+                tables=tables,
+                figures=figures,
+                extraction_strategy="vision",
+                confidence_score=confidence_score,
+                processing_time=end_time - start_time,
+            )
+
+        def _fallback_from_pages(target_pages: List[Any]) -> Tuple[List[TextBlock], List[TableBlock], List[FigureBlock]]:
+            # Reuse the existing graceful-per-page fallback path.
+            return self._extract_with_ollama(doc_id, target_pages, cfg)
+
         try:
             ledger = self._load_budget_ledger(budget_file)
             current_spend = float(ledger.get(doc_id, 0.0))
@@ -43,50 +96,56 @@ class VisionExtractor(BaseExtractor):
                 if current_spend + projected_increment > budget_cap:
                     return self._halted_doc(doc_id, start_time, "Budget exceeded")
 
+                # Charge the vision tier regardless of whether the VLM call succeeds, since
+                # in production the attempt itself consumes budget.
                 current_spend += projected_increment
                 ledger[doc_id] = current_spend
                 self._save_budget_ledger(budget_file, ledger)
 
                 text_blocks, tables, figures = self._extract_with_ollama(doc_id, target_pages, cfg)
 
+            # If the VLM returns nothing (or the page-level fallback produced nothing), return a
+            # low-confidence but valid document instead of halting.
             if not text_blocks and not tables and not figures:
-                return self._halted_doc(doc_id, start_time, "No extractable content from VLM")
+                return _finalize(
+                    text_blocks=[],
+                    tables=[],
+                    figures=[],
+                    target_page_count=target_page_count,
+                    current_spend=current_spend,
+                    degraded=True,
+                    degraded_reason="No extractable content from VLM",
+                )
 
-            estimated_tokens = int(cfg.get("avg_tokens_per_page", 700) * max(1, target_page_count))
-            confidence_signals = self._build_confidence_signals(
+            return _finalize(
                 text_blocks=text_blocks,
                 tables=tables,
                 figures=figures,
                 target_page_count=target_page_count,
                 current_spend=current_spend,
-                budget_cap=budget_cap,
+                degraded=False,
             )
-            confidence_score = self.get_confidence_score(None, signals=confidence_signals)
         except Exception as e:
-            return self._halted_doc(doc_id, start_time, str(e))
-
-        end_time = time.time()
-        return ExtractedDocument(
-            doc_id=doc_id,
-            metadata={
-                "strategy": "VisionExtractor",
-                "provider": "ollama",
-                "model": model_name,
-                "total_spend": current_spend,
-                # For interim grading: surface a consistent cost field across strategies.
-                "estimated_cost_usd": current_spend,
-                "budget_cap_per_doc": budget_cap,
-                "estimated_tokens": estimated_tokens,
-                "pages_processed": target_page_count,
-                "confidence_signals": confidence_signals,
-            },
-            text_blocks=text_blocks,
-            tables=tables,
-            figures=figures,
-            extraction_strategy="vision",
-            confidence_score=confidence_score,
-            processing_time=end_time - start_time,
-        )
+            # Non-budget failures (Ollama down, PDF rendering errors, etc.) should degrade
+            # gracefully rather than halting the pipeline.
+            try:
+                with pdfplumber.open(doc_path) as pdf:
+                    target_pages = [pdf.pages[i] for i in pages] if pages else pdf.pages[: int(cfg.get("default_page_count", 1))]
+                    target_page_count = len(target_pages)
+                # We couldn't complete the VLM call, so spend is treated as 0 for this run.
+                current_spend = 0.0
+                text_blocks, tables, figures = _fallback_from_pages(target_pages)
+                return _finalize(
+                    text_blocks=text_blocks,
+                    tables=tables,
+                    figures=figures,
+                    target_page_count=target_page_count,
+                    current_spend=current_spend,
+                    degraded=True,
+                    degraded_reason=f"Vision path failed; fell back to embedded extraction: {e}",
+                )
+            except Exception:
+                return self._halted_doc(doc_id, start_time, str(e))
 
     def get_confidence_score(
         self,
