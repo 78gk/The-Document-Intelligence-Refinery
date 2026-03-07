@@ -8,11 +8,11 @@
     "level": 0,
     "child_sections": [],
     "key_entities": [],
-    "summary": "Document root navigation tree",
+    "summary": "Navigation index for tax_expenditure_ethiopia_2021_22 spanning 20 pages.",
     "data_types_present": [
-      "text",
       "table",
-      "figure"
+      "figure",
+      "text"
     ]
   }
 }

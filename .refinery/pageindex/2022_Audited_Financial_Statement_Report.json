@@ -8,11 +8,11 @@
     "level": 0,
     "child_sections": [],
     "key_entities": [],
-    "summary": "Document root navigation tree",
+    "summary": "Navigation index for 2022_Audited_Financial_Statement_Report spanning 1 pages.",
     "data_types_present": [
-      "text",
       "table",
-      "figure"
+      "figure",
+      "text"
     ]
   }
 }

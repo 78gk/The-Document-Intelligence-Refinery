@@ -8,11 +8,11 @@
     "level": 0,
     "child_sections": [],
     "key_entities": [],
-    "summary": "Document root navigation tree",
+    "summary": "Navigation index for fta_performance_survey_final_report_2022 spanning 1 pages.",
     "data_types_present": [
-      "text",
       "table",
-      "figure"
+      "figure",
+      "text"
     ]
   }
 }
