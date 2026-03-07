@@ -6,21 +6,7 @@
     "page_start": 1,
     "page_end": 1,
     "level": 0,
-    "child_sections": [
-      {
-        "node_id": "2013-E.C-Audit-finding-information-sec-1",
-        "title": "Full Document",
-        "page_start": 1,
-        "page_end": 1,
-        "level": 1,
-        "child_sections": [],
-        "key_entities": [],
-        "summary": "Complete document overview",
-        "data_types_present": [
-          "text"
-        ]
-      }
-    ],
+    "child_sections": [],
     "key_entities": [],
     "summary": "Document root navigation tree",
     "data_types_present": [

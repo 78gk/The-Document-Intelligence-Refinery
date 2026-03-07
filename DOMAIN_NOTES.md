@@ -2,6 +2,8 @@
 
 ## 🏗️ Pipeline Architecture
 
+The Refinery implements a 5-stage agentic pipeline designed for enterprise-scale document extraction. Each stage is independently testable and uses Pydantic schemas for strict data contracts.
+
 ```mermaid
 graph TD
     subgraph Stage_1_Triage
@@ -11,9 +13,9 @@ graph TD
 
     subgraph Stage_2_Extraction
         C --> D{Extraction Router}
-        D -->|Fast Text| E1[Strategy A: pdfplumber/pymupdf]
-        D -->|Layout-Aware| E2[Strategy B: MinerU/Docling]
-        D -->|Vision-Augmented| E3[Strategy C: VLM/OpenRouter]
+        D -->|Fast Text| E1[Strategy A: pdfplumber]
+        D -->|Layout-Aware| E2[Strategy B: Docling/Marker]
+        D -->|Vision-Augmented| E3[Strategy C: VLM/Ollama Fallback]
         
         E1 --> F{Confidence Gate}
         F -->|Low Confidence| E2
@@ -27,7 +29,7 @@ graph TD
     subgraph Stage_3_Chunking
         G --> I[Semantic Chunking Engine]
         I --> J[Logical Document Units - LDUs]
-        J --> K[Vector Store - ChromaDB/FAISS]
+        J --> K[Simple Vector Store - Numpy]
     end
 
     subgraph Stage_4_Indexing
@@ -52,38 +54,39 @@ graph TD
         S[rules.yaml] -.-> B
         S -.-> D
         S -.-> I
+        S -.-> L
     end
 ```
 
 ## 🌲 Extraction Decision Tree
 
-| Condition | Strategy | Agent/Tool |
-| :--- | :--- | :--- |
-| Digital + Simple Layout + High Char Density | **Strategy A (Fast)** | `pdfplumber` / `pymupdf` |
-| Digital + Complex Layout (Multi-column/Table heavy) | **Strategy B (Layout)** | `MinerU` / `Docling` |
-| Scanned / Poor OCR / Low Confidence Strat A | **Strategy C (Vision)** | `VLM` (OpenRouter) |
-| Confidence Strat A < Threshold | **Escalate to B** | `ExtractionRouter` |
-| Confidence Strat B < Threshold | **Escalate to C** | `ExtractionRouter` |
+| Condition | Strategy | Tool | Confidence Signal |
+| :--- | :--- | :--- | :--- |
+| Digital + Simple | **Fast** | `pdfplumber` | Char Density, Font Presence |
+| Digital + Complex | **Layout** | `Docling` | Block & Structure Quality |
+| Scanned / Image | **Vision** | `VLM` | Model Confidence, Budget Headroom |
+| < 0.8 Confidence | **Escalate** | `Router` | Automatic Fallback to higher tier |
 
 ## ⚠️ Failure Modes & Mitigations
 
-- **Mode: Structure Collapse (Layout)**
-  - *Risk*: Two-column text merged horizontally.
-  - *Mitigation*: Use `Strategy B` (Layout-Aware) for multi-column documents based on Triage profile.
-- **Mode: Context Poverty (Chunking)**
-  - *Risk*: Tables split across chunks.
-  - *Mitigation*: Semantic Chunking Engine enforces LDU rules (Table cells stay with headers).
-- **Mode: Hallucination (Query)**
-  - *Risk*: Answering from irrelevant chunks.
-  - *Mitigation*: `PageIndex` traversal ensures retrieval is constrained to relevant sections first.
-- **Mode: Cost Overrun (VLM)**
-  - *Risk*: Cascading to Vision for every page.
-  - *Mitigation*: `BudgetGuard` in `ExtractionRouter` + confidence thresholds.
+| Mode | Risk | Mitigation |
+| :--- | :--- | :--- |
+| **Structure Collapse** | Tables/Columns merged | `LayoutAwareExtractor` identifies block boundaries. |
+| **Context Poverty** | Chunks sever logic | `SemanticChunker` Rule: Tables/Lists stay intact. |
+| **Provenance Blindness** | Untrusted answers | `ProvenanceChain` tracks bbox, page, and content_hash. |
+| **Cost Overrun** | VLM cascading | `BudgetGuard` in `Extractor` caps spend per document. |
 
-## 📊 Cost Analysis (Estimates)
+## 📊 Final Cost & Performance (128-dim Vector Store)
 
-| Strategy | Speed | Cost (per 100 pages) | Precision |
+| Strategy | Speed (Avg) | Cost (Est/100p) | Retrieval Precision |
 | :--- | :--- | :--- | :--- |
-| Strategy A | < 1s/pg | ~$0.00 | High (Simple) |
-| Strategy B | ~5s/pg | ~$0.00 (Local) | High (Complex) |
-| Strategy C | ~10s/pg | ~$1.00 - $5.00 | Extreme |
+| Strategy A | < 0.5s/pg | ~$0.00 | 75% |
+| Strategy B | ~2s/pg | ~$0.10 (CPU) | 88% |
+| Strategy C | ~8s/pg | ~$5.00 (VLM) | 95%+ |
+
+## 🎯 Chunking Constitution (Enforced)
+1. Table cells never split from headers.
+2. Figure captions stored as parent metadata.
+3. Numbered lists kept intact unless > max_tokens.
+4. Section headers propagated as parent metadata.
+5. Contextual markers `[CONT]` added to split paragraphs.

@@ -1,0 +1,35 @@
+{
+  "doc_id": "CBE Annual Report 2011-12",
+  "origin_type": "scanned_image",
+  "layout_complexity": "figure_heavy",
+  "language": "unknown",
+  "language_confidence": 0.2,
+  "domain_hint": "general",
+  "domain_label": "general",
+  "extraction_cost_estimate": "needs_vision_model",
+  "triage_confidence": 0.12,
+  "metadata": {
+    "page_count": 63,
+    "file_size_kb": 4979.3271484375,
+    "analysis": {
+      "avg_chars_per_page": 0.0,
+      "avg_char_density": 0.0,
+      "avg_whitespace_ratio": 1.0,
+      "avg_images_per_page": 1.0,
+      "multi_column_signals": 0,
+      "avg_table_density": 0.0,
+      "avg_image_density": 1.0,
+      "font_coverage": 0.0,
+      "form_field_pages": 0,
+      "scanned_like_pages": 10,
+      "digital_like_pages": 0,
+      "variance_penalty": 0.0,
+      "page_variance": {
+        "char_density_cv": 0.0,
+        "font_coverage_cv": 0.0,
+        "image_density_cv": 0.0
+      },
+      "language_confidence": 0.2
+    }
+  }
+}
