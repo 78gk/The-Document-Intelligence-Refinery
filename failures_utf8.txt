@@ -1,0 +1,3 @@
+  Numerical queries routed to structured_query:   [FAIL]
+  [ERROR] ISSUES: ['Tool selection: numerical query did not route to structured_query']
+  [FAIL] NEEDS WORK  Query Interface Agent (25pt)
